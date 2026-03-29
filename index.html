@@ -119,10 +119,14 @@
     /* CALENDARIO ORARIO (giorno selezionato) */
     .day-cal-root {
       --cal-slot: 40px;
-      border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface);
+      border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
       margin-bottom: 14px;
+      max-height: 400px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
     }
-    .day-cal-shell { display: flex; min-height: 200px; }
+    .day-cal-shell { display: flex; align-items: flex-start; }
     .day-cal-rail {
       flex: 0 0 44px; width: 44px; border-right: 1px solid var(--line); background: var(--bg);
     }
@@ -141,6 +145,10 @@
     .day-cal-slot.tap:active { background: rgba(37, 99, 235, 0.12); }
     .day-cal-layer {
       position: absolute; left: 0; right: 0; top: 0; pointer-events: none; z-index: 2;
+    }
+    .day-cal-now-line {
+      position: absolute; left: 0; right: 0; height: 2px; background: #ef4444;
+      z-index: 5000; pointer-events: none; box-shadow: 0 0 6px rgba(239, 68, 68, 0.65);
     }
     .cal-ev {
       position: absolute; left: 6px; right: 6px; border-radius: 8px; padding: 6px 8px;
@@ -504,6 +512,21 @@
 
         layer.appendChild(div);
       });
+
+      const todayKey = dkey(new Date());
+      if (seld === todayKey) {
+        const now = new Date();
+        const mins = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+        const t0 = H0 * 60;
+        const t1 = H1 * 60;
+        if (mins >= t0 && mins <= t1) {
+          const y = ((mins - t0) / SLOT) * slotPx;
+          const line = document.createElement("div");
+          line.className = "day-cal-now-line";
+          line.style.top = Math.max(0, y) + "px";
+          layer.appendChild(line);
+        }
+      }
 
       main.appendChild(stack);
       main.appendChild(layer);
