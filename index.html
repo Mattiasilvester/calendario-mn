@@ -116,6 +116,58 @@
     .ev-tasks input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; }
     .ev-tasks .done { text-decoration: line-through; color: var(--muted); }
 
+    /* CALENDARIO ORARIO (giorno selezionato) */
+    .day-cal-root {
+      --cal-slot: 40px;
+      border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface);
+      margin-bottom: 14px;
+    }
+    .day-cal-shell { display: flex; min-height: 200px; }
+    .day-cal-rail {
+      flex: 0 0 44px; width: 44px; border-right: 1px solid var(--line); background: var(--bg);
+    }
+    .day-cal-corner { height: 28px; border-bottom: 1px solid var(--line); }
+    .day-cal-tl {
+      height: var(--cal-slot); font-size: 0.625rem; color: var(--muted); padding: 2px 4px 0;
+      display: flex; justify-content: flex-end; border-bottom: 1px solid rgba(30, 32, 48, 0.9);
+    }
+    .day-cal-main { flex: 1; min-width: 0; position: relative; align-self: stretch; }
+    .day-cal-slots { position: relative; z-index: 1; }
+    .day-cal-slot {
+      height: var(--cal-slot); border-bottom: 1px solid rgba(30, 32, 48, 0.75); background: rgba(255, 255, 255, 0.02);
+    }
+    .day-cal-slot:nth-child(odd) { background: rgba(255, 255, 255, 0.04); }
+    .day-cal-slot.tap { cursor: pointer; }
+    .day-cal-slot.tap:active { background: rgba(37, 99, 235, 0.12); }
+    .day-cal-layer {
+      position: absolute; left: 0; right: 0; top: 0; pointer-events: none; z-index: 2;
+    }
+    .cal-ev {
+      position: absolute; left: 6px; right: 6px; border-radius: 8px; padding: 6px 8px;
+      font-size: 0.75rem; overflow: auto; max-height: 100%; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12); pointer-events: auto;
+    }
+    .cal-ev.readonly { cursor: default; }
+    .cal-ev.own { cursor: pointer; }
+    .cal-ev .ce-t { font-weight: 700; font-size: 0.8125rem; line-height: 1.2; margin-bottom: 2px; }
+    .cal-ev .ce-meta { font-size: 0.625rem; opacity: 0.92; margin-bottom: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .cal-ev .ce-badge {
+      font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 2px 6px; border-radius: 4px;
+    }
+    .cal-ev .ce-badge.m { background: rgba(37, 99, 235, 0.35); color: #93c5fd; }
+    .cal-ev .ce-badge.n { background: rgba(219, 39, 119, 0.3); color: #f9a8d4; }
+    .cal-ev-tasks { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.15); }
+    .cal-ev-tasks label { display: flex; gap: 6px; align-items: flex-start; font-size: 0.6875rem; margin-bottom: 4px; }
+    .cal-ev-tasks input { width: 16px; height: 16px; margin-top: 1px; flex-shrink: 0; }
+    .cal-ev-tasks .done { text-decoration: line-through; opacity: 0.75; }
+    .day-cal-caption {
+      font-size: 0.75rem; color: var(--muted); margin: 0 0 8px; line-height: 1.4;
+    }
+    .day-list-title {
+      margin: 16px 0 10px; font-size: 0.8125rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
     /* RESOCONTO */
     .resoconto-card {
       margin: 0 12px 28px; max-width: 720px; margin-left: auto; margin-right: auto;
@@ -215,6 +267,9 @@
         <h2 id="day-title"></h2>
         <button type="button" class="btn-add" id="ne">+ Evento</button>
       </div>
+      <p class="day-cal-caption">Calendario orario (6:00–24:00). Tocca uno slot vuoto per aggiungere. Tocca un tuo evento per modificarlo.</p>
+      <div id="day-cal" class="day-cal-root" aria-label="Calendario del giorno"></div>
+      <h3 class="day-list-title">Elenco eventi</h3>
       <div id="day-events"></div>
     </section>
 
@@ -250,6 +305,7 @@
     const SLOT = 30;
     const H0 = 6;
     const H1 = 24;
+    const N_SLOT = ((H1 - H0) * 60) / SLOT;
 
     const CAT = {
       universita: { l: "Università", bg: "#2563EB", fg: "#fff" },
@@ -297,7 +353,7 @@
     const el = {
       tm: $("t-m"), tn: $("t-n"), wl: $("who-lbl"), wc: $("who-ch"),
       pw: $("pw"), nw: $("nw"), wr: $("wr"), td: $("td"), ne: $("ne"),
-      leg: $("leg"), chips: $("chips"), dayTitle: $("day-title"), dayEv: $("day-events"),
+      leg: $("leg"), chips: $("chips"), dayTitle: $("day-title"), dayCal: $("day-cal"), dayEv: $("day-events"),
       rep: $("rep"), mod: $("mod"), toast: $("toast"), boot: $("boot"),
       ld: $("ld"), main: $("main-app"), curDate: $("cur-date"),
     };
@@ -322,6 +378,138 @@
 
     function eventsDay(dk) {
       return cache.filter((e) => e.date === dk).sort((a, b) => a.startMin - b.startMin);
+    }
+
+    function shCal() {
+      const root = el.dayCal;
+      if (!root) return 40;
+      const v = parseFloat(getComputedStyle(root).getPropertyValue("--cal-slot"));
+      return Number.isFinite(v) ? v : 40;
+    }
+
+    function eventAtSlot(si) {
+      const s0 = H0 * 60 + si * SLOT;
+      const s1 = s0 + SLOT;
+      return eventsDay(seld).find((e) => e.startMin < s1 && e.endMin > s0);
+    }
+
+    function renderDayTimeline() {
+      if (!el.dayCal) return;
+      if (!iam) {
+        el.dayCal.innerHTML = "<p style=\"padding:14px;color:#9ca3af;font-size:.875rem;margin:0;\">Scegli chi sei (Mattia/Nicholas) per usare il calendario orario.</p>";
+        return;
+      }
+      const slotPx = shCal();
+      const totalH = N_SLOT * slotPx;
+      el.dayCal.innerHTML = "";
+      const shell = document.createElement("div");
+      shell.className = "day-cal-shell";
+
+      const rail = document.createElement("div");
+      rail.className = "day-cal-rail";
+      rail.appendChild(Object.assign(document.createElement("div"), { className: "day-cal-corner" }));
+      for (let s = 0; s < N_SLOT; s++) {
+        const tl = document.createElement("div");
+        tl.className = "day-cal-tl";
+        tl.textContent = lab(H0 * 60 + s * SLOT);
+        rail.appendChild(tl);
+      }
+
+      const main = document.createElement("div");
+      main.className = "day-cal-main";
+      main.style.minHeight = totalH + "px";
+
+      const stack = document.createElement("div");
+      stack.className = "day-cal-slots";
+      for (let s = 0; s < N_SLOT; s++) {
+        const sl = document.createElement("div");
+        sl.className = "day-cal-slot";
+        if (!eventAtSlot(s) && iam) {
+          sl.classList.add("tap");
+          const si = s;
+          sl.addEventListener("click", () => {
+            openEv(null, seld, H0 * 60 + si * SLOT, H0 * 60 + si * SLOT + 120);
+          });
+        }
+        stack.appendChild(sl);
+      }
+
+      const layer = document.createElement("div");
+      layer.className = "day-cal-layer";
+      layer.style.height = totalH + "px";
+
+      sortByViewFirst(eventsDay(seld)).forEach((e) => {
+        const c = CAT[e.category] || CAT.altro;
+        const r0 = Math.max(0, e.startMin - H0 * 60);
+        const r1 = Math.max(r0 + SLOT, e.endMin - H0 * 60);
+        const top = (r0 / SLOT) * slotPx;
+        const h = Math.max(((r1 - r0) / SLOT) * slotPx, slotPx * 0.55);
+        const div = document.createElement("div");
+        div.className = "cal-ev" + (canEv(e) ? " own" : " readonly");
+        div.style.top = top + "px";
+        div.style.height = h + "px";
+        div.style.background = c.bg;
+        div.style.color = c.fg;
+        div.style.zIndex = String(10 + e.startMin);
+
+        const t = document.createElement("div");
+        t.className = "ce-t";
+        t.textContent = e.title || c.l;
+        div.appendChild(t);
+
+        const meta = document.createElement("div");
+        meta.className = "ce-meta";
+        meta.appendChild(document.createTextNode(lab(e.startMin) + " – " + lab(e.endMin)));
+        const bd = document.createElement("span");
+        bd.className = "ce-badge " + (e.owner === "mattia" ? "m" : "n");
+        bd.textContent = e.owner === "mattia" ? "M" : "N";
+        meta.appendChild(bd);
+        div.appendChild(meta);
+
+        const ts = Array.isArray(e.tasks) ? e.tasks : [];
+        if (ts.length) {
+          const tk = document.createElement("div");
+          tk.className = "cal-ev-tasks";
+          ts.forEach((task, i) => {
+            const L = document.createElement("label");
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = !!task.done;
+            cb.disabled = !canEv(e);
+            cb.addEventListener("change", async () => {
+              const nx = ts.map((x, j) => (j === i ? { ...x, done: cb.checked } : x));
+              try {
+                await updateDoc(doc(db, "events", e.id), { tasks: nx });
+              } catch (err) {
+                toast("Salvataggio fallito");
+                cb.checked = !cb.checked;
+              }
+            });
+            const sp = document.createElement("span");
+            sp.className = task.done ? "done" : "";
+            sp.textContent = task.text || "";
+            L.appendChild(cb);
+            L.appendChild(sp);
+            tk.appendChild(L);
+          });
+          div.appendChild(tk);
+        }
+
+        if (canEv(e)) {
+          div.addEventListener("click", (ev) => {
+            if (ev.target.closest("label") || ev.target.closest("input")) return;
+            openEv(e);
+          });
+        }
+
+        layer.appendChild(div);
+      });
+
+      main.appendChild(stack);
+      main.appendChild(layer);
+      shell.appendChild(rail);
+      shell.appendChild(main);
+      el.dayCal.appendChild(shell);
     }
 
     function sortByViewFirst(arr) {
@@ -448,6 +636,8 @@
         if (!iam) return;
         openEvNewForSeld();
       };
+
+      renderDayTimeline();
 
       el.dayEv.innerHTML = "";
       const list = sortByViewFirst(eventsDay(dk));
