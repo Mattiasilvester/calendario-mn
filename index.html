@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calendario Mattia & Nicholas</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a222d;
+      --surface2: #232d3b;
+      --border: #2d3a4d;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent-m: #3b82f6;
+      --accent-n: #a855f7;
+      --slot-h: 48px;
+      --time-col: 52px;
+      --slots-per-day: 36;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.45; }
+    header { position: sticky; top: 0; z-index: 50; background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+    .header-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; max-width: 1400px; margin: 0 auto; }
+    h1 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+    .tabs { display: flex; gap: 8px; }
+    .tabs button { padding: 10px 18px; border-radius: 10px; border: 2px solid transparent; font-weight: 600; cursor: pointer; background: var(--surface2); color: var(--text); }
+    .tabs button[data-u="mattia"].on { border-color: var(--accent-m); background: rgba(59,130,246,.15); }
+    .tabs button[data-u="nicholas"].on { border-color: var(--accent-n); background: rgba(168,85,247,.15); }
+    .who { max-width: 1400px; margin: 8px auto 0; font-size: .8rem; color: var(--muted); padding: 0 16px; }
+    .who button { background: none; border: none; color: var(--accent-m); cursor: pointer; text-decoration: underline; padding: 0; font-size: inherit; }
+    main { max-width: 1400px; margin: 0 auto; padding: 16px; }
+    .hint { margin: 0 0 12px; padding: 10px 12px; font-size: .82rem; color: var(--muted); background: rgba(59,130,246,.08); border: 1px solid var(--border); border-radius: 8px; }
+    .hint[hidden] { display: none !important; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .toolbar button, .toolbar span { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: .875rem; cursor: pointer; }
+    .toolbar span { cursor: default; border-style: dashed; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 12px; font-size: .72rem; color: var(--muted); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 12px; height: 12px; border-radius: 3px; }
+    .wrap { border: 1px solid var(--border); border-radius: 12px; overflow: auto; background: var(--surface); max-height: calc(100vh - 300px); min-height: 400px; }
+    .cal { display: flex; flex-direction: column; min-width: 760px; }
+    .cal-h { display: flex; position: sticky; top: 0; z-index: 6; background: var(--surface); }
+    .trh { width: var(--time-col); flex-shrink: 0; position: sticky; left: 0; z-index: 7; background: var(--surface); }
+    .corner { height: 42px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .dheads { display: flex; flex: 1; min-width: 0; }
+    .dhead { flex: 1; min-width: 92px; padding: 10px 6px; text-align: center; font-size: .76rem; font-weight: 600; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface2); cursor: pointer; }
+    .dhead.today { color: var(--accent-m); box-shadow: inset 0 -2px 0 var(--accent-m); }
+    .cal-b { display: flex; }
+    .trb { width: var(--time-col); flex-shrink: 0; position: sticky; left: 0; z-index: 5; background: var(--surface); border-right: 1px solid var(--border); }
+    .tl { height: var(--slot-h); font-size: .65rem; color: var(--muted); padding: 2px 6px 0; display: flex; justify-content: flex-end; border-bottom: 1px solid rgba(45,58,77,.5); }
+    .dcols { display: flex; flex: 1; min-width: 0; }
+    .dcol { flex: 1; min-width: 92px; border-right: 1px solid rgba(45,58,77,.45); position: relative; }
+    .slots { position: relative; z-index: 1; }
+    .slot { height: var(--slot-h); border-bottom: 1px solid rgba(45,58,77,.35); background: rgba(0,0,0,.08); cursor: crosshair; }
+    .slot:nth-child(odd) { background: rgba(0,0,0,.04); }
+    .slot:hover { background: rgba(59,130,246,.07); }
+    .elayer { position: absolute; left: 0; right: 0; top: 0; height: calc(var(--slot-h) * var(--slots-per-day)); z-index: 2; pointer-events: none; }
+    .ev { position: absolute; left: 4px; right: 4px; border-radius: 8px; padding: 6px 8px; font-size: .7rem; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.35); z-index: 3; display: flex; flex-direction: column; gap: 3px; pointer-events: auto; }
+    .ev.ro { cursor: default; opacity: .95; }
+    .ev:not(.ro) { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .ev:not(.ro):active { cursor: grabbing; }
+    .ev .t { font-weight: 700; }
+    .ev .tm { font-size: .62rem; opacity: .9; }
+    .ev label { display: flex; gap: 6px; align-items: flex-start; font-size: .65rem; line-height: 1.2; }
+    .ev label input { margin-top: 2px; flex-shrink: 0; }
+    .panels { margin-top: 18px; display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 880px) { .panels { grid-template-columns: 1fr; } }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .panel h2 { margin: 0 0 10px; font-size: .95rem; }
+    .panel .sub { font-size: .75rem; color: var(--muted); margin: 0 0 10px; }
+    .olist { list-style: none; margin: 0; padding: 0; font-size: .85rem; }
+    .olist li { padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .olist li:last-child { border: none; }
+    .report { font-size: .86rem; white-space: pre-wrap; background: var(--surface2); padding: 14px; border-radius: 10px; border: 1px solid var(--border); line-height: 1.5; }
+    .rhint { font-size: .74rem; color: var(--muted); margin-top: 8px; }
+    .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; width: 100%; max-width: 400px; max-height: 88vh; overflow-y: auto; }
+    .modal h3 { margin: 0 0 12px; }
+    .f { margin-bottom: 10px; }
+    .f label { display: block; font-size: .75rem; color: var(--muted); margin-bottom: 4px; }
+    .f input, .f select, .f textarea { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: .9rem; }
+    .f textarea { min-height: 70px; resize: vertical; }
+    .ma { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .ma button { padding: 10px 14px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: .85rem; }
+    .b-p { background: var(--accent-m); color: #fff; }
+    .b-d { background: #b91c1c; color: #fff; }
+    .b-g { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--border); padding: 10px 16px; border-radius: 10px; font-size: .85rem; z-index: 200; opacity: 0; transition: opacity .2s; pointer-events: none; }
+    .toast.on { opacity: 1; }
+    .pick { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .pick button { flex: 1; min-width: 110px; padding: 12px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface2); color: var(--text); font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <noscript><p style="padding:1rem;background:#1a222d;color:#e8edf4;">Abilita JavaScript.</p></noscript>
+  <header>
+    <div class="header-row">
+      <h1>Calendario condiviso</h1>
+      <div class="tabs" role="tablist">
+        <button type="button" id="t-m" data-u="mattia" class="on">Mattia</button>
+        <button type="button" id="t-n" data-u="nicholas">Nicholas</button>
+      </div>
+    </div>
+    <div class="who">Dispositivo: <strong id="who-lbl">—</strong> · <button type="button" id="who-ch">Cambia</button></div>
+  </header>
+  <main>
+    <p id="boot" class="hint">Caricamento…</p>
+    <div class="toolbar">
+      <button type="button" id="pw">← Settimana</button>
+      <span id="wr"></span>
+      <button type="button" id="nw">Settimana →</button>
+      <button type="button" id="td">Oggi</button>
+      <button type="button" id="ne">+ Evento</button>
+    </div>
+    <div class="legend" id="leg"></div>
+    <div class="wrap">
+      <div class="cal" id="cal" hidden></div>
+      <p id="ld" style="text-align:center;padding:24px;color:var(--muted)">Connessione…</p>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <h2 id="ot">Impegni dell’altro</h2>
+        <p class="sub">Clicca un giorno in alto per la data del resoconto.</p>
+        <ul class="olist" id="ol"></ul>
+      </div>
+      <div class="panel">
+        <h2>Resoconto giornaliero (Mattia + Nicholas)</h2>
+        <p class="sub">Aggiornato in tempo reale. Dopo le 23:00 il testo vale come chiusura giornata.</p>
+        <div class="report" id="rep"></div>
+        <p class="rhint" id="rh"></p>
+      </div>
+    </div>
+  </main>
+  <div id="mod"></div>
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import {
+      getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, serverTimestamp,
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyATJE7Nm2r5ikFRcRnkb4E44cwto8imEQw",
+      authDomain: "calendario-mn-953a9.firebaseapp.com",
+      projectId: "calendario-mn-953a9",
+      storageBucket: "calendario-mn-953a9.firebasestorage.app",
+      messagingSenderId: "534109228503",
+      appId: "1:534109228503:web:00ace9c6178a5fed7c0f92",
+    };
+
+    const SK_IAM = "calmn_iam";
+    const SK_V = "calmn_v";
+    const SLOT = 30;
+    const H0 = 6;
+    const H1 = 24;
+    const N_SLOT = ((H1 - H0) * 60) / SLOT;
+
+    const CAT = {
+      universita: { l: "Università", bg: "#1d4ed8", fg: "#fff" },
+      lavoro_pc: { l: "Lavoro PC", bg: "#eab308", fg: "#1c1917" },
+      lavoro: { l: "Lavoro", bg: "#dc2626", fg: "#fff" },
+      tempo_libero: { l: "Tempo libero", bg: "#16a34a", fg: "#fff" },
+      allenamento: { l: "Allenamento", bg: "#db2777", fg: "#fff" },
+      altro: { l: "Altro", bg: "#171717", fg: "#f5f5f5" },
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function dkey(d) {
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+    function pkey(s) {
+      const [y, m, d] = s.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function sow(d) {
+      const x = new Date(d);
+      const day = x.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      x.setDate(x.getDate() + diff);
+      x.setHours(0, 0, 0, 0);
+      return x;
+    }
+    function addd(d, n) {
+      const x = new Date(d);
+      x.setDate(x.getDate() + n);
+      return x;
+    }
+    function sg(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function ss(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+    let iam = sg(SK_IAM);
+    let view = sg(SK_V) || "mattia";
+    let wk = 0;
+    let seld = dkey(new Date());
+    let cache = [];
+    let un = null;
+    let drag = null;
+
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      tm: $("t-m"), tn: $("t-n"), wl: $("who-lbl"), wc: $("who-ch"),
+      pw: $("pw"), nw: $("nw"), wr: $("wr"), td: $("td"), ne: $("ne"),
+      leg: $("leg"), cal: $("cal"), ld: $("ld"), ot: $("ot"), ol: $("ol"),
+      rep: $("rep"), rh: $("rh"), mod: $("mod"), toast: $("toast"), boot: $("boot"),
+    };
+
+    function wb() {
+      const b = new Date();
+      b.setDate(b.getDate() + wk * 7);
+      const a = sow(b);
+      return { a, b: addd(a, 6) };
+    }
+    function lab(m) {
+      const h = Math.floor(m / 60), n = m % 60;
+      return String(h).padStart(2, "0") + ":" + String(n).padStart(2, "0");
+    }
+    function sh() { return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slot-h")) || 48; }
+
+    function toast(m) {
+      el.toast.textContent = m;
+      el.toast.classList.add("on");
+      clearTimeout(toast.t);
+      toast.t = setTimeout(() => el.toast.classList.remove("on"), 2400);
+    }
+
+    function evView() { return cache.filter((e) => e.owner === view); }
+    function atSlot(di, si) {
+      const { a } = wb();
+      const dk = dkey(addd(a, di));
+      const s0 = H0 * 60 + si * SLOT, s1 = s0 + SLOT;
+      return evView().find((e) => e.date === dk && e.startMin < s1 && e.endMin > s0);
+    }
+    function canCal() { return iam === view; }
+    function canEv(e) { return iam && e.owner === iam; }
+
+    function setV(u) {
+      view = u;
+      ss(SK_V, view);
+      el.tm.classList.toggle("on", u === "mattia");
+      el.tn.classList.toggle("on", u === "nicholas");
+      draw();
+      side();
+    }
+
+    function idModal(req) {
+      el.mod.innerHTML = "<div class=\"backdrop\"><div class=\"modal\"><h3>Chi sei su questo dispositivo?</h3><p class=\"sub\">Solo i tuoi eventi sono modificabili.</p><div class=\"pick\"><button type=\"button\" data-p=\"mattia\">Mattia</button><button type=\"button\" data-p=\"nicholas\">Nicholas</button></div>" +
+        (req ? "" : "<div class=\"ma\"><button type=\"button\" class=\"b-g\" id=\"cx\">Annulla</button></div>") + "</div></div>";
+      const b = el.mod.querySelector(".backdrop");
+      b.querySelectorAll("[data-p]").forEach((x) => x.addEventListener("click", () => {
+        iam = x.getAttribute("data-p");
+        ss(SK_IAM, iam);
+        el.wl.textContent = iam === "mattia" ? "Mattia" : "Nicholas";
+        el.mod.innerHTML = "";
+        draw();
+        side();
+      }));
+      const cx = b.querySelector("#cx");
+      if (cx) cx.onclick = () => { el.mod.innerHTML = ""; };
+    }
+
+    function ensure() {
+      if (iam === "mattia" || iam === "nicholas") {
+        el.wl.textContent = iam === "mattia" ? "Mattia" : "Nicholas";
+        return;
+      }
+      idModal(true);
+    }
+
+    function leg() {
+      el.leg.innerHTML = "";
+      for (const [, c] of Object.entries(CAT)) {
+        const s = document.createElement("span");
+        const i = document.createElement("i");
+        i.style.background = c.bg;
+        s.appendChild(i);
+        s.appendChild(document.createTextNode(c.l));
+        el.leg.appendChild(s);
+      }
+    }
+
+    function sub() {
+      if (un) un();
+      const { a, b } = wb();
+      const q = query(collection(db, "events"), where("date", ">=", dkey(a)), where("date", "<=", dkey(b)));
+      un = onSnapshot(q, (snap) => {
+        cache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        el.ld.hidden = true;
+        el.cal.hidden = false;
+        draw();
+        side();
+      }, (e) => {
+        console.error(e);
+        el.ld.textContent = "Errore Firestore (regole / rete).";
+        toast(e.message || "Firestore");
+      });
+    }
+
+    function card(layer, e) {
+      const r0 = Math.max(0, e.startMin - H0 * 60);
+      const r1 = Math.max(r0 + SLOT, e.endMin - H0 * 60);
+      const shx = sh();
+      const top = (r0 / SLOT) * shx;
+      const h = ((r1 - r0) / SLOT) * shx;
+      const c = CAT[e.category] || CAT.altro;
+      const div = document.createElement("div");
+      div.className = "ev" + (canEv(e) ? "" : " ro");
+      div.style.top = top + "px";
+      div.style.height = h + "px";
+      div.style.background = c.bg;
+      div.style.color = c.fg;
+      div.innerHTML = "<div class=\"t\"></div><div class=\"tm\"></div>";
+      div.querySelector(".t").textContent = e.title || c.l;
+      div.querySelector(".tm").textContent = lab(e.startMin) + " – " + lab(e.endMin);
+      const ts = Array.isArray(e.tasks) ? e.tasks : [];
+      ts.forEach((t, i) => {
+        const L = document.createElement("label");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!t.done;
+        cb.disabled = !canEv(e);
+        cb.onchange = async () => {
+          const nx = ts.map((x, j) => (j === i ? { ...x, done: cb.checked } : x));
+          try { await updateDoc(doc(db, "events", e.id), { tasks: nx }); } catch (err) { toast("Salvataggio fallito"); cb.checked = !cb.checked; }
+        };
+        const sp = document.createElement("span");
+        sp.textContent = t.text || "";
+        if (t.done) sp.style.textDecoration = "line-through";
+        L.appendChild(cb);
+        L.appendChild(sp);
+        div.appendChild(L);
+      });
+      if (canEv(e)) {
+        div.ondblclick = (ev) => { ev.stopPropagation(); openEv(e); };
+        div.onpointerdown = (ev) => {
+          if (ev.button !== 0) return;
+          drag = { e, y0: ev.clientY, s0: e.startMin, e0: e.endMin, div };
+          div.setPointerCapture(ev.pointerId);
+        };
+        div.onpointermove = (ev) => {
+          if (!drag || drag.e.id !== e.id) return;
+          const dy = ev.clientY - drag.y0;
+          const dm = Math.round(dy / sh()) * SLOT;
+          let ns = drag.s0 + dm, ne = drag.e0 + dm;
+          const lo = H0 * 60, hi = H1 * 60;
+          if (ns < lo) { const d = lo - ns; ns += d; ne += d; }
+          if (ne > hi) { const d = ne - hi; ns -= d; ne -= d; }
+          div.style.top = ((ns - H0 * 60) / SLOT) * sh() + "px";
+        };
+        div.onpointerup = async (ev) => {
+          if (!drag || drag.e.id !== e.id) return;
+          div.releasePointerCapture(ev.pointerId);
+          const dy = ev.clientY - drag.y0;
+          const dm = Math.round(dy / sh()) * SLOT;
+          let ns = drag.s0 + dm, ne = drag.e0 + dm;
+          const lo = H0 * 60, hi = H1 * 60;
+          if (ns < lo) { const d = lo - ns; ns += d; ne += d; }
+          if (ne > hi) { const d = ne - hi; ns -= d; ne -= d; }
+          drag = null;
+          if (ns !== e.startMin || ne !== e.endMin) {
+            try { await updateDoc(doc(db, "events", e.id), { startMin: ns, endMin: ne }); } catch (err) { toast("Orario non aggiornato"); }
+          }
+          draw();
+        };
+        div.onpointercancel = () => { drag = null; draw(); };
+      }
+      layer.appendChild(div);
+    }
+
+    function draw() {
+      if (!iam) return;
+      const { a, b } = wb();
+      const today = dkey(new Date());
+      const dn = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+      el.wr.textContent = dkey(a).slice(8) + "/" + dkey(a).slice(5, 7) + " – " + dkey(b).slice(8) + "/" + dkey(b).slice(5, 7) + " " + b.getFullYear();
+
+      el.cal.innerHTML = "";
+      const ch = document.createElement("div");
+      ch.className = "cal-h";
+      const trh = document.createElement("div");
+      trh.className = "trh";
+      trh.appendChild(Object.assign(document.createElement("div"), { className: "corner" }));
+      ch.appendChild(trh);
+      const heads = document.createElement("div");
+      heads.className = "dheads";
+      for (let d = 0; d < 7; d++) {
+        const day = addd(a, d);
+        const dk = dkey(day);
+        const h = document.createElement("div");
+        h.className = "dhead" + (dk === today ? " today" : "");
+        if (dk === seld) h.style.outline = "2px solid var(--accent-m)";
+        h.textContent = dn[d] + " " + day.getDate() + "/" + (day.getMonth() + 1);
+        h.onclick = () => { seld = dk; draw(); side(); };
+        heads.appendChild(h);
+      }
+      ch.appendChild(heads);
+      el.cal.appendChild(ch);
+
+      const cb = document.createElement("div");
+      cb.className = "cal-b";
+      const trb = document.createElement("div");
+      trb.className = "trb";
+      for (let s = 0; s < N_SLOT; s++) {
+        const t = document.createElement("div");
+        t.className = "tl";
+        t.textContent = lab(H0 * 60 + s * SLOT);
+        trb.appendChild(t);
+      }
+      cb.appendChild(trb);
+
+      const cols = document.createElement("div");
+      cols.className = "dcols";
+      for (let d = 0; d < 7; d++) {
+        const dk = dkey(addd(a, d));
+        const col = document.createElement("div");
+        col.className = "dcol";
+        const stack = document.createElement("div");
+        stack.className = "slots";
+        for (let s = 0; s < N_SLOT; s++) {
+          const sl = document.createElement("div");
+          sl.className = "slot";
+          if (!atSlot(d, s) && canCal()) sl.onclick = () => openEv(null, d, s);
+          stack.appendChild(sl);
+        }
+        col.appendChild(stack);
+        const lay = document.createElement("div");
+        lay.className = "elayer";
+        evView().filter((e) => e.date === dk).forEach((e) => card(lay, e));
+        col.appendChild(lay);
+        cols.appendChild(col);
+      }
+      cb.appendChild(cols);
+      el.cal.appendChild(cb);
+    }
+
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    }
+    function ti(m) {
+      const h = Math.floor(m / 60), n = m % 60;
+      return String(h).padStart(2, "0") + ":" + String(n).padStart(2, "0");
+    }
+    function it(v) {
+      const [h, m] = v.split(":").map(Number);
+      return h * 60 + m;
+    }
+
+    function openEv(ex, di, si) {
+      if (!iam) return;
+      if (!ex && !canCal()) { toast("Passa al tuo calendario per creare."); return; }
+      const { a } = wb();
+      const day = ex ? pkey(ex.date) : addd(a, di);
+      const dk = dkey(day);
+      const sm = ex ? ex.startMin : H0 * 60 + (si ?? 0) * SLOT;
+      const em = ex ? ex.endMin : sm + 120;
+      const opts = Object.keys(CAT).map((k) => "<option value=\"" + k + "\"" + (ex && ex.category === k ? " selected" : "") + ">" + CAT[k].l + "</option>").join("");
+      const tx = ex && Array.isArray(ex.tasks) ? ex.tasks.map((t) => t.text).join("\n") : "";
+      el.mod.innerHTML = "<div class=\"backdrop\"><div class=\"modal\"><h3>" + (ex ? "Modifica" : "Nuovo") + " evento</h3>" +
+        "<div class=\"f\"><label>Titolo</label><input id=\"ft\" value=\"" + esc(ex ? (ex.title || "") : "") + "\"></div>" +
+        "<div class=\"f\"><label>Data</label><input id=\"fd\" type=\"date\" value=\"" + dk + "\"></div>" +
+        "<div class=\"f\"><label>Categoria</label><select id=\"fc\">" + opts + "</select></div>" +
+        "<div class=\"f\"><label>Inizio</label><input id=\"fs\" type=\"time\" value=\"" + ti(sm) + "\" step=\"1800\"></div>" +
+        "<div class=\"f\"><label>Fine</label><input id=\"fe\" type=\"time\" value=\"" + ti(em) + "\" step=\"1800\"></div>" +
+        "<div class=\"f\"><label>Task (una per riga)</label><textarea id=\"fk\" placeholder=\"...\"></textarea></div>" +
+        "<div class=\"ma\"><button type=\"button\" class=\"b-p\" id=\"sv\">Salva</button>" +
+        (ex ? "<button type=\"button\" class=\"b-d\" id=\"dl\">Elimina</button>" : "") +
+        "<button type=\"button\" class=\"b-g\" id=\"cl\">Chiudi</button></div></div></div>";
+      el.mod.querySelector("#fk").value = tx;
+      const bd = el.mod.querySelector(".backdrop");
+      bd.querySelector("#cl").onclick = () => { el.mod.innerHTML = ""; };
+      bd.querySelector("#sv").onclick = async () => {
+        const title = bd.querySelector("#ft").value.trim();
+        const date = bd.querySelector("#fd").value;
+        const category = bd.querySelector("#fc").value;
+        const s1 = it(bd.querySelector("#fs").value);
+        const e1 = it(bd.querySelector("#fe").value);
+        if (!date || e1 <= s1) { toast("Controlla data e orari."); return; }
+        const lines = bd.querySelector("#fk").value.split("\n").map((x) => x.trim()).filter(Boolean);
+        const prev = ex && Array.isArray(ex.tasks) ? ex.tasks : [];
+        const tasks = lines.map((text, i) => ({ id: prev[i]?.id || ("t_" + Date.now() + "_" + i), text, done: !!prev[i]?.done }));
+        try {
+          if (ex) {
+            await updateDoc(doc(db, "events", ex.id), { title, date, category, startMin: s1, endMin: e1, tasks });
+          } else {
+            await addDoc(collection(db, "events"), { owner: iam, title, date, category, startMin: s1, endMin: e1, tasks, createdAt: serverTimestamp() });
+          }
+          el.mod.innerHTML = "";
+        } catch (err) { console.error(err); toast("Salvataggio fallito"); }
+      };
+      const dl = bd.querySelector("#dl");
+      if (dl) {
+        dl.onclick = async () => {
+          if (!confirm("Eliminare?")) return;
+          try { await deleteDoc(doc(db, "events", ex.id)); el.mod.innerHTML = ""; } catch (err) { toast("Errore eliminazione"); }
+        };
+      }
+    }
+
+    function side() {
+      const other = view === "mattia" ? "nicholas" : "mattia";
+      const on = other === "mattia" ? "Mattia" : "Nicholas";
+      el.ot.textContent = "Impegni di " + on + " — " + seld;
+      el.ol.innerHTML = "";
+      const list = cache.filter((e) => e.date === seld && e.owner === other).sort((x, y) => x.startMin - y.startMin);
+      if (!list.length) {
+        const li = document.createElement("li");
+        li.textContent = "Nessun impegno.";
+        el.ol.appendChild(li);
+      } else {
+        list.forEach((e) => {
+          const c = CAT[e.category] || CAT.altro;
+          const li = document.createElement("li");
+          li.innerHTML = "<strong style=\"color:" + c.bg + "\">" + esc(e.title || c.l) + "</strong><br><span style=\"color:var(--muted);font-size:.8rem\">" + lab(e.startMin) + " – " + lab(e.endMin) + " · " + c.l + "</span>";
+          el.ol.appendChild(li);
+        });
+      }
+
+      const day = cache.filter((e) => e.date === seld);
+      const M = day.filter((e) => e.owner === "mattia").sort((a, b) => a.startMin - b.startMin);
+      const N = day.filter((e) => e.owner === "nicholas").sort((a, b) => a.startMin - b.startMin);
+      const lines = [];
+      const fmt = pkey(seld).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      lines.push("Resoconto — " + fmt);
+      lines.push("");
+      function block(name, arr) {
+        lines.push("— " + name + " —");
+        if (!arr.length) lines.push("Nessun evento.");
+        else arr.forEach((e) => {
+          const c = CAT[e.category] || CAT.altro;
+          lines.push("• " + lab(e.startMin) + "–" + lab(e.endMin) + " " + (e.title || c.l) + " (" + c.l + ")");
+          const done = (e.tasks || []).filter((t) => t.done);
+          const pend = (e.tasks || []).filter((t) => !t.done);
+          if (done.length) lines.push("  Completate: " + done.map((t) => t.text).join("; "));
+          if (pend.length) lines.push("  Da fare: " + pend.map((t) => t.text).join("; "));
+        });
+        lines.push("");
+      }
+      block("Mattia", M);
+      block("Nicholas", N);
+      const merged = [...M.flatMap((e) => (e.tasks || []).filter((t) => t.done).map((t) => ({ w: "Mattia", t: t.text }))), ...N.flatMap((e) => (e.tasks || []).filter((t) => t.done).map((t) => ({ w: "Nicholas", t: t.text })))];
+      lines.push("— Task completate (insieme) —");
+      if (!merged.length) lines.push("Nessuna.");
+      else merged.forEach((x, i) => lines.push((i + 1) + ". [" + x.w + "] " + x.t));
+
+      el.rep.textContent = lines.join("\n");
+      const now = new Date();
+      let h = "";
+      if (dkey(now) === seld) {
+        if (now.getHours() < 23) h = "Prima delle 23:00 — resoconto live; dopo le 23 considera la giornata chiusa.";
+        else h = "Dopo le 23:00 — riepilogo giornata per entrambi.";
+      } else h = "Giorno selezionato (non necessariamente oggi).";
+      if (!canCal()) h += " Stai guardando il calendario dell’altro: non puoi modificarlo qui.";
+      el.rh.textContent = h;
+    }
+
+    el.tm.onclick = () => setV("mattia");
+    el.tn.onclick = () => setV("nicholas");
+    el.wc.onclick = () => idModal(false);
+    el.pw.onclick = () => { wk--; sub(); };
+    el.nw.onclick = () => { wk++; sub(); };
+    el.td.onclick = () => { wk = 0; seld = dkey(new Date()); sub(); };
+    el.ne.onclick = () => openEv(null, 0, 8);
+
+    try {
+      leg();
+      setV(view);
+      ensure();
+      sub();
+      if (el.boot) el.boot.hidden = true;
+    } catch (err) {
+      console.error(err);
+      if (el.boot) {
+        el.boot.hidden = false;
+        el.boot.style.color = "#fecaca";
+        el.boot.textContent = "Errore: " + (err && err.message ? err.message : String(err));
+      }
+    }
+  </script>
+</body>
+</html>
