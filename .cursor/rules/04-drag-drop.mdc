@@ -1,0 +1,16 @@
+---
+description: Drag and resize behavior rules
+globs: ["src/logic/interactions/**/*", "src/components/calendar/**/*"]
+alwaysApply: true
+---
+
+- Drag move:
+  - modifies start/end while preserving duration.
+  - snaps to 15-minute boundaries.
+- Resize:
+  - top handle changes start.
+  - bottom handle changes end.
+  - enforces minimum duration.
+- Never allow invalid intervals (`end <= start`).
+- Keep drag/resize math deterministic and pure where possible.
+- Pointer interactions must not leave state partially updated.

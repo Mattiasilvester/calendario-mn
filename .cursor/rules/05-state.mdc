@@ -1,0 +1,12 @@
+---
+description: State management and persistence consistency
+globs: ["src/state/**/*", "src/services/persistence/**/*", "src/domain/**/*"]
+alwaysApply: true
+---
+
+- Keep calendar state normalized and explicit.
+- Treat state as immutable: no in-place mutation.
+- Validate data before state commit and before persistence write.
+- Persistence adapters must be replaceable without UI changes.
+- Handle corrupted persisted data safely (fallback and continue).
+- Event list order should be stable and deterministic.

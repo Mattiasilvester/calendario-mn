@@ -1,0 +1,14 @@
+---
+description: Enforce clean architecture boundaries
+globs: ["src/**/*"]
+alwaysApply: true
+---
+
+- Separate concerns strictly:
+  - UI components: render + interaction wiring only.
+  - Calendar logic: pure functions in dedicated logic modules.
+  - State: centralized event source of truth.
+  - Persistence: adapter-based boundary.
+- Do not duplicate time/layout logic across components.
+- Prefer small modules with explicit responsibilities.
+- Keep business rules out of styling files and JSX templates.

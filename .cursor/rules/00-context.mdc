@@ -1,0 +1,11 @@
+---
+description: Project context and goals for calendar MVP
+globs: ["**/*"]
+alwaysApply: true
+---
+
+- This repository is a focused MVP for a professional drag-and-drop calendar.
+- Prioritize clarity, correctness, and deterministic behavior.
+- Keep implementation simple and maintainable.
+- Avoid adding features outside documented MVP scope unless explicitly requested.
+- Use the docs folder as product source of truth.

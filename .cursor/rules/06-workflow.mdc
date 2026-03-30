@@ -1,0 +1,12 @@
+---
+description: Development workflow and quality gates
+globs: ["src/**/*", "docs/**/*"]
+alwaysApply: true
+---
+
+- Before adding features, confirm behavior against docs in `docs/`.
+- Prefer incremental changes with clear commit-sized steps.
+- For each non-trivial logic update, add or update unit tests.
+- Do not refactor broad areas without a direct product need.
+- Keep UI and logic aligned: visual output must reflect real data.
+- If requirements are ambiguous, choose the simplest deterministic interpretation and document it.

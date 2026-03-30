@@ -1,0 +1,14 @@
+---
+description: Calendar time and layout logic guarantees
+globs: ["src/logic/**/*", "src/components/calendar/**/*", "src/domain/**/*"]
+alwaysApply: true
+---
+
+- Slot size is 15 minutes.
+- Visible range is 06:00-22:00 unless product docs are updated.
+- `end` must always be strictly greater than `start`.
+- Minimum duration is 15 minutes.
+- Persist event times in ISO UTC format.
+- All px<->time conversions must use centralized helper functions.
+- Event block visual position must match underlying start/end exactly.
+- Same input state must produce identical output layout.

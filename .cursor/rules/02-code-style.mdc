@@ -1,0 +1,13 @@
+---
+description: TypeScript and coding style standards
+globs: ["src/**/*.{ts,tsx}"]
+alwaysApply: true
+---
+
+- Use strict TypeScript.
+- Do not use `any` unless explicitly justified and documented inline.
+- Prefer named types/interfaces for non-trivial objects.
+- Keep functions small, deterministic, and side-effect aware.
+- Use descriptive names (`slotMinutes`, `eventStartMs`, `visibleRangeStart`).
+- Avoid magic numbers: extract constants.
+- Fail fast on invalid input and return explicit errors.
