@@ -2,7 +2,7 @@
 
 ## Time System
 - Slot: 15 minuti.
-- Finestra visibile: 06:00-22:00.
+- Finestra visibile: 06:00-23:00.
 - Ogni calcolo deve usare utility condivise (no formule duplicate nei componenti).
 
 ## Views

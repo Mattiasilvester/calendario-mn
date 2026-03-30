@@ -3,7 +3,7 @@
 ## Time Boundaries
 - Evento con `start == end` -> invalido.
 - Evento con `end < start` -> invalido.
-- Evento che inizia prima di 06:00 o finisce dopo 22:00:
+- Evento che inizia prima di 06:00 o finisce dopo 23:00:
   - comportamento definito (clamp o render parziale) ma sempre coerente.
 
 ## Slot Alignment

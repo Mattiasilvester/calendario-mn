@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CalendarEvent, EventCategory, EventDraft, EventStatus, EventTask, UserId } from "../../types/calendar";
 import { parseIsoToDate, toIsoUtc } from "../../utils/timeSlots";
+import "../../app/styles.css";
 
 type EventModalProps = {
   open: boolean;
@@ -103,7 +104,16 @@ export function EventModal({
   };
 
   return (
-    <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "grid", placeItems: "center", padding: 16, zIndex: 50 }}>
+    <div
+      className="modal-overlay"
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "grid", placeItems: "center", padding: 16, zIndex: 50 }}
+    >
       <div className="modal-panel" style={{ width: "100%", maxWidth: 500, background: "#161922", border: "1px solid #2a3044", borderRadius: 12, padding: 16, display: "grid", gap: 10, maxHeight: "92vh", overflowY: "auto" }}>
         <h3 style={{ margin: 0 }}>{event ? "Modifica evento" : "Nuovo evento"}</h3>
 
@@ -119,17 +129,40 @@ export function EventModal({
 
         <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Inizio
-          <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+          <input
+            type="datetime-local"
+            className="event-modal-datetime"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            style={{ colorScheme: "dark" }}
+          />
         </label>
 
         <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Fine
-          <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+          <input
+            type="datetime-local"
+            className="event-modal-datetime"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+            style={{ colorScheme: "dark" }}
+          />
         </label>
 
         <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Categoria
-          <select value={category} onChange={(e) => setCategory(e.target.value as EventCategory)}>
+          <select
+            className="event-modal-select"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as EventCategory)}
+            style={{
+              paddingTop: 10,
+              paddingBottom: 10,
+              paddingLeft: 12,
+              paddingRight: 40,
+              boxSizing: "border-box",
+            }}
+          >
             <option value="universita">università</option>
             <option value="lavoro_pc">lavoro pc</option>
             <option value="lavoro">lavoro</option>
@@ -141,7 +174,18 @@ export function EventModal({
 
         <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Stato
-          <select value={status} onChange={(e) => setStatus(e.target.value as EventStatus)}>
+          <select
+            className="event-modal-select"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as EventStatus)}
+            style={{
+              paddingTop: 10,
+              paddingBottom: 10,
+              paddingLeft: 12,
+              paddingRight: 40,
+              boxSizing: "border-box",
+            }}
+          >
             <option value="confirmed">confirmed</option>
             <option value="tentative">tentative</option>
             <option value="cancelled">cancelled</option>
