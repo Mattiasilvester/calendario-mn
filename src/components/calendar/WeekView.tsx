@@ -1,6 +1,10 @@
+import { useState } from "react";
 import type { CalendarEvent, TimeWindow, UserId } from "../../types/calendar";
+import type { MoveSessionPayload, MoveSessionPhase } from "../../hooks/useMoveEventDrag";
+import type { ResizeSessionPayload, ResizeSessionPhase } from "../../hooks/useResizeEdgeDrag";
 import { eventToLayout, getGridHeightPx, isSameDay, parseIsoToDate, startOfWeek } from "../../utils/timeSlots";
 import { EventCard } from "./EventCard";
+import { ResizeGuideOverlay } from "./ResizeGuideOverlay";
 import { TimeGrid } from "./TimeGrid";
 
 type WeekViewProps = {
@@ -10,8 +14,12 @@ type WeekViewProps = {
   currentUser: UserId;
   onSelectSlot?: (date: Date, slotStartMinutes: number) => void;
   onOpenEvent?: (event: CalendarEvent) => void;
+  onMoveSession?: (phase: MoveSessionPhase, payload: MoveSessionPayload) => void;
+  onResizeSession?: (phase: ResizeSessionPhase, payload: ResizeSessionPayload) => void;
   onToggleTask?: (eventId: string, taskId: string, completed: boolean) => void;
 };
+
+type ColumnGuide = { dayIso: string; topPx: number; label: string };
 
 export function WeekView({
   anchorDate,
@@ -20,8 +28,11 @@ export function WeekView({
   currentUser,
   onSelectSlot,
   onOpenEvent,
+  onMoveSession,
+  onResizeSession,
   onToggleTask,
 }: WeekViewProps) {
+  const [timeDragGuide, setTimeDragGuide] = useState<ColumnGuide | null>(null);
   const start = startOfWeek(anchorDate);
   const days = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(start);
@@ -54,12 +65,19 @@ export function WeekView({
                       <EventCard
                         event={event}
                         layout={eventToLayout(event, window)}
+                        window={window}
                         currentUser={currentUser}
                         onClick={onOpenEvent}
+                        onMoveSession={onMoveSession}
+                        onResizeSession={onResizeSession}
+                        onDragGuide={(g) => setTimeDragGuide(g ? { ...g, dayIso: key } : null)}
                         onToggleTask={onToggleTask}
                       />
                     </div>
                   ))}
+                  {timeDragGuide?.dayIso === key ? (
+                    <ResizeGuideOverlay topPx={timeDragGuide.topPx} label={timeDragGuide.label} />
+                  ) : null}
                 </div>
               </div>
             </div>

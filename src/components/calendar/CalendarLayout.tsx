@@ -1,16 +1,18 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { MOCK_EVENTS } from "../../mocks/events";
 import type { CalendarEvent, CalendarView, EventDraft, UserId } from "../../types/calendar";
 import { DEFAULT_TIME_WINDOW, addMinutes, floorToSlot, toIsoUtc } from "../../utils/timeSlots";
 import {
+  computeMovedEventTimes,
+  computeResizedEventTimes,
   createEvent,
   generateDailySummary,
-  moveEvent,
-  resizeEvent,
   toggleTaskCompleted,
   updateEvent,
   validateEvent,
 } from "../../logic/core/calendar.engine";
+import type { MoveSessionPayload, MoveSessionPhase } from "../../hooks/useMoveEventDrag";
+import type { ResizeSessionPayload, ResizeSessionPhase } from "../../hooks/useResizeEdgeDrag";
 import { DayView } from "./DayView";
 import { EventModal } from "./EventModal";
 import { Toolbar } from "./Toolbar";
@@ -103,21 +105,53 @@ export function CalendarLayout() {
     setEvents((prev) => toggleTaskCompleted(prev, eventId, taskId, completed, currentUser));
   };
 
-  // Queste funzioni sono il punto unico per drag/resize.
-  // I prossimi hook di interazione (useDragSession/useResizeSession) dovranno usare solo queste API.
-  const applyMoveEvent = (eventId: string, deltaMinutes: number) => {
-    setEvents((prev) => moveEvent(prev, eventId, deltaMinutes, DEFAULT_TIME_WINDOW));
-  };
+  const handleMoveSession = useCallback(
+    (phase: MoveSessionPhase, payload: MoveSessionPayload) => {
+      if (payload.snapshot.userId !== currentUser) return;
+      if (phase === "cancel") {
+        setEvents((prev) => prev.map((e) => (e.id === payload.eventId ? payload.snapshot : e)));
+        return;
+      }
+      setEvents((prev) =>
+        prev.map((e) => {
+          if (e.id !== payload.eventId) return e;
+          if (e.userId !== currentUser) return e;
+          const { start, end } = computeMovedEventTimes(
+            payload.snapshot,
+            payload.deltaMinutes,
+            DEFAULT_TIME_WINDOW,
+            currentUser,
+          );
+          return { ...e, start, end };
+        }),
+      );
+    },
+    [currentUser],
+  );
 
-  const applyResizeEvent = (
-    eventId: string,
-    edge: "start" | "end",
-    deltaMinutes: number,
-  ) => {
-    setEvents((prev) => resizeEvent(prev, eventId, edge, deltaMinutes, DEFAULT_TIME_WINDOW));
-  };
-  void applyMoveEvent;
-  void applyResizeEvent;
+  const handleResizeSession = useCallback(
+    (phase: ResizeSessionPhase, payload: ResizeSessionPayload) => {
+      if (payload.snapshot.userId !== currentUser) return;
+      if (phase === "cancel") {
+        setEvents((prev) => prev.map((e) => (e.id === payload.eventId ? payload.snapshot : e)));
+        return;
+      }
+      setEvents((prev) =>
+        prev.map((e) => {
+          if (e.id !== payload.eventId) return e;
+          if (e.userId !== currentUser) return e;
+          const { start, end } = computeResizedEventTimes(
+            payload.snapshot,
+            payload.edge,
+            payload.deltaMinutes,
+            DEFAULT_TIME_WINDOW,
+          );
+          return { ...e, start, end };
+        }),
+      );
+    },
+    [currentUser],
+  );
 
   return (
     <div className="app-shell">
@@ -146,6 +180,8 @@ export function CalendarLayout() {
               setModalOpen(true);
             }}
             onToggleTask={onToggleTask}
+            onMoveSession={handleMoveSession}
+            onResizeSession={handleResizeSession}
           />
         ) : (
           <WeekView
@@ -159,6 +195,8 @@ export function CalendarLayout() {
               setModalOpen(true);
             }}
             onToggleTask={onToggleTask}
+            onMoveSession={handleMoveSession}
+            onResizeSession={handleResizeSession}
           />
         )}
         <section className="card" style={{ marginTop: 12, padding: 12 }}>
@@ -180,8 +218,6 @@ export function CalendarLayout() {
         onDelete={deleteEvent}
       />
 
-      {/* Drag & drop + resize non ancora collegati alla UI.
-          Quando verranno cablati, devono chiamare applyMoveEvent/applyResizeEvent (calendar.engine). */}
     </div>
   );
 }

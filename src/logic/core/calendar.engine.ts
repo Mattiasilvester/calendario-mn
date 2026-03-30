@@ -68,28 +68,75 @@ export function toggleTaskCompleted(
   });
 }
 
+/** Nuovi orari dopo spostamento verticale con delta cumulativo rispetto allo snapshot (stessa semantica di `moveEvent`). */
+export function computeMovedEventTimes(
+  event: CalendarEvent,
+  deltaMinutes: number,
+  window: TimeWindow,
+  actorUserId: UserId,
+): { start: string; end: string } {
+  if (event.userId !== actorUserId) {
+    return { start: event.start, end: event.end };
+  }
+  const snappedDelta = roundDeltaToSlot(deltaMinutes, window.slotMinutes);
+  if (snappedDelta === 0) {
+    return { start: event.start, end: event.end };
+  }
+  const start = parseIsoToDate(event.start);
+  const end = parseIsoToDate(event.end);
+  const duration = end.getTime() - start.getTime();
+  let nextStart = addMinutes(start, snappedDelta);
+  nextStart = clampToWindow(nextStart, window);
+  let nextEnd = new Date(nextStart.getTime() + duration);
+  const maxEnd = clampToWindow(nextEnd, window);
+  if (maxEnd.getTime() < nextEnd.getTime()) {
+    nextEnd = maxEnd;
+    nextStart = new Date(nextEnd.getTime() - duration);
+  }
+  return { start: toIsoUtc(nextStart), end: toIsoUtc(nextEnd) };
+}
+
 export function moveEvent(
   events: CalendarEvent[],
   eventId: string,
   deltaMinutes: number,
   window: TimeWindow,
+  actorUserId: UserId,
 ): CalendarEvent[] {
   const snappedDelta = roundDeltaToSlot(deltaMinutes, window.slotMinutes);
+  if (snappedDelta === 0) return events;
   return events.map((event) => {
     if (event.id !== eventId) return event;
-    const start = parseIsoToDate(event.start);
-    const end = parseIsoToDate(event.end);
-    const duration = end.getTime() - start.getTime();
+    if (event.userId !== actorUserId) return event;
+    const times = computeMovedEventTimes(event, deltaMinutes, window, actorUserId);
+    return { ...event, ...times };
+  });
+}
+
+/** Nuovi orari dopo resize con delta cumulativo rispetto allo `event` di riferimento (es. snapshot a pointerdown). */
+export function computeResizedEventTimes(
+  event: CalendarEvent,
+  edge: "start" | "end",
+  deltaMinutes: number,
+  window: TimeWindow,
+): { start: string; end: string } {
+  const snappedDelta = roundDeltaToSlot(deltaMinutes, window.slotMinutes);
+  const start = parseIsoToDate(event.start);
+  const end = parseIsoToDate(event.end);
+
+  if (edge === "start") {
     let nextStart = addMinutes(start, snappedDelta);
     nextStart = clampToWindow(nextStart, window);
-    let nextEnd = new Date(nextStart.getTime() + duration);
-    const maxEnd = clampToWindow(nextEnd, window);
-    if (maxEnd.getTime() < nextEnd.getTime()) {
-      nextEnd = maxEnd;
-      nextStart = new Date(nextEnd.getTime() - duration);
-    }
-    return { ...event, start: toIsoUtc(nextStart), end: toIsoUtc(nextEnd) };
-  });
+    const maxStart = addMinutes(end, -window.slotMinutes);
+    if (nextStart > maxStart) nextStart = maxStart;
+    return { start: toIsoUtc(nextStart), end: event.end };
+  }
+
+  let nextEnd = addMinutes(end, snappedDelta);
+  nextEnd = clampToWindow(nextEnd, window);
+  const minEnd = addMinutes(start, window.slotMinutes);
+  if (nextEnd < minEnd) nextEnd = minEnd;
+  return { start: event.start, end: toIsoUtc(nextEnd) };
 }
 
 export function resizeEvent(
@@ -99,25 +146,10 @@ export function resizeEvent(
   deltaMinutes: number,
   window: TimeWindow,
 ): CalendarEvent[] {
-  const snappedDelta = roundDeltaToSlot(deltaMinutes, window.slotMinutes);
   return events.map((event) => {
     if (event.id !== eventId) return event;
-    const start = parseIsoToDate(event.start);
-    const end = parseIsoToDate(event.end);
-
-    if (edge === "start") {
-      let nextStart = addMinutes(start, snappedDelta);
-      nextStart = clampToWindow(nextStart, window);
-      const maxStart = addMinutes(end, -window.slotMinutes);
-      if (nextStart > maxStart) nextStart = maxStart;
-      return { ...event, start: toIsoUtc(nextStart) };
-    }
-
-    let nextEnd = addMinutes(end, snappedDelta);
-    nextEnd = clampToWindow(nextEnd, window);
-    const minEnd = addMinutes(start, window.slotMinutes);
-    if (nextEnd < minEnd) nextEnd = minEnd;
-    return { ...event, end: toIsoUtc(nextEnd) };
+    const times = computeResizedEventTimes(event, edge, deltaMinutes, window);
+    return { ...event, ...times };
   });
 }
 

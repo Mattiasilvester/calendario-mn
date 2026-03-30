@@ -2,11 +2,14 @@ import type { CalendarEvent, TimeWindow } from "../../types/calendar";
 
 export const DEFAULT_TIME_WINDOW: TimeWindow = {
   startHour: 6,
-  endHour: 22,
+  endHour: 23,
   slotMinutes: 15,
 };
 
 export const HOUR_HEIGHT_PX = 80;
+const LINE_COLOR_HOUR = "#4a5a86";
+const LINE_COLOR_HALF = "#394665";
+const LINE_COLOR_QUARTER = "#2a3044";
 
 export function getSlotsPerHour(slotMinutes: number): number {
   return 60 / slotMinutes;
@@ -20,9 +23,53 @@ export function getVisibleMinutes(window: TimeWindow): number {
   return (window.endHour - window.startHour) * 60;
 }
 
+/** Slot da 15 min con inizio nel range [startHour, endHour), es. ultimo 22:45–23:00. */
+export function getContentSlotCount(window: TimeWindow): number {
+  return getVisibleMinutes(window) / window.slotMinutes;
+}
+
+/** Righe disegnate nella timeline: slot contenuto + una riga finale solo etichetta fine (endHour:00). */
+export function getDisplayRowCount(window: TimeWindow): number {
+  return getContentSlotCount(window) + 1;
+}
+
 export function getGridHeightPx(window: TimeWindow): number {
   const slotHeight = getSlotHeightPx(window.slotMinutes);
-  return (getVisibleMinutes(window) / window.slotMinutes) * slotHeight;
+  return getDisplayRowCount(window) * slotHeight;
+}
+
+export function getSlotVisualMeta(index: number, slotMinutes: number): {
+  minuteInHour: number;
+  isHourLine: boolean;
+  isHalfHourLine: boolean;
+  lineColor: string;
+  background: string;
+} {
+  const slotsPerHour = 60 / slotMinutes;
+  const hourSlotIndex = index % slotsPerHour;
+  const minuteInHour = hourSlotIndex * slotMinutes;
+  const isHourLine = minuteInHour === 0;
+  const isHalfHourLine = minuteInHour === 30;
+  const lineColor = isHourLine
+    ? LINE_COLOR_HOUR
+    : isHalfHourLine
+      ? LINE_COLOR_HALF
+      : LINE_COLOR_QUARTER;
+  const background = isHourLine
+    ? "rgba(255,255,255,0.05)"
+    : isHalfHourLine
+      ? "rgba(255,255,255,0.035)"
+      : index % 2 === 0
+        ? "rgba(255,255,255,0.02)"
+        : "rgba(255,255,255,0.028)";
+
+  return {
+    minuteInHour,
+    isHourLine,
+    isHalfHourLine,
+    lineColor,
+    background,
+  };
 }
 
 export function parseIsoToDate(iso: string): Date {
@@ -56,6 +103,17 @@ export function roundDeltaToSlot(deltaMinutes: number, slotMinutes: number): num
   return Math.round(deltaMinutes / slotMinutes) * slotMinutes;
 }
 
+/**
+ * Spostamento verticale sulla timeline → delta minuti allineato allo slot.
+ * Delta positivo = verso il basso (ora successiva nella griglia).
+ */
+export function deltaPxToRoundedSlotMinutes(deltaPx: number, window: TimeWindow): number {
+  const slotHeight = getSlotHeightPx(window.slotMinutes);
+  if (slotHeight <= 0) return 0;
+  const rawMinutes = (deltaPx / slotHeight) * window.slotMinutes;
+  return roundDeltaToSlot(rawMinutes, window.slotMinutes);
+}
+
 export function minutesFromWindowStart(date: Date, window: TimeWindow): number {
   const start = new Date(date);
   start.setHours(window.startHour, 0, 0, 0);
@@ -83,9 +141,16 @@ export function eventToLayout(event: CalendarEvent, window: TimeWindow): { top: 
   };
 }
 
+/** Posizione Y nella griglia (come `eventToLayout.top`) per un istante di calendario. */
+export function dateTimeToLayoutTopPx(date: Date, window: TimeWindow): number {
+  const slotHeight = getSlotHeightPx(window.slotMinutes);
+  const startMin = minutesFromWindowStart(date, window);
+  return (startMin / window.slotMinutes) * slotHeight;
+}
+
 export function buildTimeLabels(window: TimeWindow): string[] {
   const labels: string[] = [];
-  for (let h = window.startHour; h <= window.endHour; h++) {
+  for (let h = window.startHour; h < window.endHour; h++) {
     labels.push(String(h).padStart(2, "0") + ":00");
   }
   return labels;
