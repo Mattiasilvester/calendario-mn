@@ -1,4 +1,4 @@
-export type CalendarView = "day" | "week";
+export type CalendarView = "day" | "week" | "month";
 
 export type EventStatus = "confirmed" | "tentative" | "cancelled";
 export type UserId = "mattia" | "nicholas";

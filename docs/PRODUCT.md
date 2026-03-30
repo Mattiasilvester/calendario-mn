@@ -12,6 +12,7 @@ Calendario drag-and-drop interno, veloce e affidabile, pensato per pianificare a
 ## MVP Scope
 - Day view
 - Week view
+- Month view (navigazione e anteprima eventi; clic giorno → vista giorno; "+ Evento" sul giorno cliccato o sul giorno dell’evento selezionato; drag/resize solo in giorno/settimana)
 - Create event
 - Update event
 - Delete event

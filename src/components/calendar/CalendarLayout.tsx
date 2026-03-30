@@ -1,7 +1,14 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MOCK_EVENTS } from "../../mocks/events";
 import type { CalendarEvent, CalendarView, EventDraft, UserId } from "../../types/calendar";
-import { DEFAULT_TIME_WINDOW, addMinutes, floorToSlot, toIsoUtc } from "../../utils/timeSlots";
+import {
+  DEFAULT_TIME_WINDOW,
+  addMinutes,
+  floorToSlot,
+  parseIsoToDate,
+  startOfLocalDay,
+  toIsoUtc,
+} from "../../utils/timeSlots";
 import {
   computeMovedEventTimes,
   computeResizedEventTimes,
@@ -15,6 +22,7 @@ import type { MoveSessionPayload, MoveSessionPhase } from "../../hooks/useMoveEv
 import type { ResizeSessionPayload, ResizeSessionPhase } from "../../hooks/useResizeEdgeDrag";
 import { DayView } from "./DayView";
 import { EventModal } from "./EventModal";
+import { MonthView } from "./MonthView";
 import { Toolbar } from "./Toolbar";
 import { WeekView } from "./WeekView";
 
@@ -27,6 +35,13 @@ export function CalendarLayout() {
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
   const [draftStart, setDraftStart] = useState<string | undefined>(undefined);
   const [draftEnd, setDraftEnd] = useState<string | undefined>(undefined);
+  /** In vista mese: giorno usato da "+ Evento" (cella cliccata, evento aperto, o sync con anchor). */
+  const [monthNewEventDate, setMonthNewEventDate] = useState<Date>(() => startOfLocalDay(new Date()));
+
+  useEffect(() => {
+    if (view !== "month") return;
+    setMonthNewEventDate(startOfLocalDay(anchorDate));
+  }, [view, anchorDate]);
 
   const pageTitle = useMemo(() => {
     if (view === "day") {
@@ -36,6 +51,10 @@ export function CalendarLayout() {
         month: "long",
         year: "numeric",
       });
+    }
+    if (view === "month") {
+      const t = anchorDate.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+      return t.charAt(0).toUpperCase() + t.slice(1);
     }
     return "Settimana " + anchorDate.toLocaleDateString("it-IT");
   }, [view, anchorDate]);
@@ -47,13 +66,25 @@ export function CalendarLayout() {
 
   const goPrev = () => {
     const next = new Date(anchorDate);
-    next.setDate(anchorDate.getDate() + (view === "day" ? -1 : -7));
+    if (view === "day") {
+      next.setDate(anchorDate.getDate() - 1);
+    } else if (view === "week") {
+      next.setDate(anchorDate.getDate() - 7);
+    } else {
+      next.setMonth(anchorDate.getMonth() - 1);
+    }
     setAnchorDate(next);
   };
 
   const goNext = () => {
     const next = new Date(anchorDate);
-    next.setDate(anchorDate.getDate() + (view === "day" ? 1 : 7));
+    if (view === "day") {
+      next.setDate(anchorDate.getDate() + 1);
+    } else if (view === "week") {
+      next.setDate(anchorDate.getDate() + 7);
+    } else {
+      next.setMonth(anchorDate.getMonth() + 1);
+    }
     setAnchorDate(next);
   };
 
@@ -162,13 +193,30 @@ export function CalendarLayout() {
         onNext={goNext}
         onToday={goToday}
         onChangeView={setView}
-        onCreate={() => openNewEvent(anchorDate, 8 * 60)}
+        onCreate={() =>
+          openNewEvent(view === "month" ? monthNewEventDate : anchorDate, 8 * 60)
+        }
         currentUser={currentUser}
         onChangeUser={setCurrentUser}
       />
 
       <main className="container">
-        {view === "day" ? (
+        {view === "month" ? (
+          <MonthView
+            anchorDate={anchorDate}
+            events={visibleEvents}
+            onOpenEvent={(event) => {
+              setMonthNewEventDate(startOfLocalDay(parseIsoToDate(event.start)));
+              setEditing(event);
+              setModalOpen(true);
+            }}
+            onGoToDay={(date) => {
+              setMonthNewEventDate(startOfLocalDay(date));
+              setAnchorDate(date);
+              setView("day");
+            }}
+          />
+        ) : view === "day" ? (
           <DayView
             date={anchorDate}
             events={visibleEvents}
@@ -182,6 +230,8 @@ export function CalendarLayout() {
             onToggleTask={onToggleTask}
             onMoveSession={handleMoveSession}
             onResizeSession={handleResizeSession}
+            onSwipePrev={goPrev}
+            onSwipeNext={goNext}
           />
         ) : (
           <WeekView
@@ -199,12 +249,14 @@ export function CalendarLayout() {
             onResizeSession={handleResizeSession}
           />
         )}
-        <section className="card" style={{ marginTop: 12, padding: 12 }}>
-          <strong>Summary giorno selezionato</strong>
-          <pre className="summary-pre">
-            {generateDailySummary(anchorDate, events)}
-          </pre>
-        </section>
+        {view !== "month" ? (
+          <section className="card" style={{ marginTop: 12, padding: 12 }}>
+            <strong>Summary giorno selezionato</strong>
+            <pre className="summary-pre">
+              {generateDailySummary(anchorDate, events)}
+            </pre>
+          </section>
+        ) : null}
       </main>
 
       <EventModal

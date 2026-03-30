@@ -88,6 +88,7 @@ export function EventCard({
 
   return (
     <article
+      data-calendar-event-card
       role={isOwner ? "button" : "article"}
       tabIndex={isOwner ? 0 : -1}
       onClick={() => {

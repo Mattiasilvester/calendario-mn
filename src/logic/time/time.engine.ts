@@ -99,6 +99,13 @@ export function floorToSlot(date: Date, slotMinutes: number): Date {
   return copy;
 }
 
+/** Mezzanotte locale dello stesso giorno di calendario di `date` (creazione eventi da griglia mese). */
+export function startOfLocalDay(date: Date): Date {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
 export function roundDeltaToSlot(deltaMinutes: number, slotMinutes: number): number {
   return Math.round(deltaMinutes / slotMinutes) * slotMinutes;
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { CalendarEvent, TimeWindow, UserId } from "../../types/calendar";
+import { useDayViewSwipeNavigation } from "../../hooks/useDayViewSwipeNavigation";
 import type { MoveSessionPayload, MoveSessionPhase } from "../../hooks/useMoveEventDrag";
 import type { ResizeSessionPayload, ResizeSessionPhase } from "../../hooks/useResizeEdgeDrag";
 import { eventToLayout, getGridHeightPx, isSameDay, parseIsoToDate } from "../../utils/timeSlots";
@@ -18,6 +19,9 @@ type DayViewProps = {
   onMoveSession?: (phase: MoveSessionPhase, payload: MoveSessionPayload) => void;
   onResizeSession?: (phase: ResizeSessionPhase, payload: ResizeSessionPayload) => void;
   onToggleTask?: (eventId: string, taskId: string, completed: boolean) => void;
+  /** Swipe orizzontale sulla timeline (esclude le card evento). */
+  onSwipePrev?: () => void;
+  onSwipeNext?: () => void;
 };
 
 export function DayView({
@@ -30,13 +34,32 @@ export function DayView({
   onMoveSession,
   onResizeSession,
   onToggleTask,
+  onSwipePrev,
+  onSwipeNext,
 }: DayViewProps) {
   const [timeDragGuide, setTimeDragGuide] = useState<{ topPx: number; label: string } | null>(null);
   const dayEvents = events.filter((event) => isSameDay(parseIsoToDate(event.start), date));
   const gridHeight = getGridHeightPx(window);
 
+  const swipeNav = useDayViewSwipeNavigation({
+    onPrev: onSwipePrev ?? (() => {}),
+    onNext: onSwipeNext ?? (() => {}),
+    disabled: !onSwipePrev || !onSwipeNext,
+  });
+
   return (
-    <section className="card" style={{ overflow: "hidden", maxHeight: 460, overflowY: "auto" }}>
+    <section
+      className="card"
+      style={{
+        overflow: "hidden",
+        maxHeight: 460,
+        overflowY: "auto",
+        touchAction: swipeNav.touchActionStyle,
+      }}
+      onPointerDownCapture={swipeNav.onPointerDownCapture}
+      onClickCapture={swipeNav.onClickCapture}
+      onWheel={swipeNav.onWheel}
+    >
       <div style={{ display: "flex", alignItems: "stretch" }}>
         <TimeColumn window={window} />
 

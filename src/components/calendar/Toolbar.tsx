@@ -54,6 +54,13 @@ export function Toolbar({
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <button
             type="button"
+            onClick={() => onChangeView("month")}
+            aria-pressed={view === "month"}
+          >
+            Mese
+          </button>
+          <button
+            type="button"
             onClick={() => onChangeView("day")}
             aria-pressed={view === "day"}
           >

@@ -11,11 +11,20 @@
 - Mostra una singola colonna temporale.
 - Eventi posizionati assolutamente su una griglia oraria.
 - Click/tap su slot vuoto: crea evento precompilato.
+- Swipe orizzontale sulla vista (timeline e colonna ore, non sulle card evento): verso sinistra → giorno successivo, verso destra → giorno precedente (stesso effetto delle frecce). Su **trackpad** il gesto è spesso mappato come scroll orizzontale (`wheel` / `deltaX`), non come pointer: è supportato insieme al trascinamento touch/mouse. Lo scroll verticale resta prioritario se il movimento è prevalentemente verticale; con **Shift + rotellina** si usa lo scroll verticale come orizzontale (comportamento tipico del desktop).
 
 ### Week View
 - Mostra 7 colonne (lun-dom).
 - Ogni colonna usa la stessa scala temporale della day view.
 - Drag orizzontale cambia giorno, drag verticale cambia orario.
+
+### Month View
+- Griglia 6×7 con inizio settimana lunedì (stessa convenzione della week view).
+- Frecce ← → spostano di un mese; "Oggi" imposta l’ancora sulla data corrente.
+- Clic su una cella giorno: passa alla day view con quella data (nessun drag/resize in mese).
+- Clic su un evento in cella: apre il modal di modifica.
+- "+ Evento" usa il **giorno scelto in mese**: ultima cella giorno cliccata (anche se poi passi alla day view), oppure il giorno di un evento su cui hai cliccato, oppure — se non hai ancora cliccato — `anchorDate` aggiornato da frecce / Oggi (sincronizzato all’entrata in vista mese).
+- Il riepilogo testuale sotto il calendario è nascosto in vista mese (evita ambiguità sul “giorno selezionato”).
 
 ## Event Lifecycle
 
