@@ -151,7 +151,7 @@
       z-index: 5000; pointer-events: none; box-shadow: 0 0 6px rgba(239, 68, 68, 0.65);
     }
     .cal-ev {
-      position: absolute; left: 6px; right: 6px; border-radius: 8px; padding: 6px 8px;
+      position: absolute; left: 48px; right: 8px; border-radius: 8px; padding: 6px 8px;
       font-size: 0.75rem; overflow: auto; max-height: 100%; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.12); pointer-events: auto;
     }
@@ -448,10 +448,11 @@
 
       sortByViewFirst(eventsDay(seld)).forEach((e) => {
         const c = CAT[e.category] || CAT.altro;
-        const r0 = Math.max(0, e.startMin - H0 * 60);
-        const r1 = Math.max(r0 + SLOT, e.endMin - H0 * 60);
-        const top = (r0 / SLOT) * slotPx;
-        const h = Math.max(((r1 - r0) / SLOT) * slotPx, slotPx * 0.55);
+        const startMin = e.startMin;
+        const endMin = Math.max(e.endMin, e.startMin + SLOT);
+        const durationMin = endMin - startMin;
+        const top = ((startMin - 360) / 60) * 80;
+        const h = (durationMin / 60) * 80;
         const div = document.createElement("div");
         div.className = "cal-ev" + (canEv(e) ? " own" : " readonly");
         div.style.top = top + "px";
@@ -520,7 +521,7 @@
         const t0 = H0 * 60;
         const t1 = H1 * 60;
         if (mins >= t0 && mins <= t1) {
-          const y = ((mins - t0) / SLOT) * slotPx;
+          const y = ((mins - 360) / 60) * 80;
           const line = document.createElement("div");
           line.className = "day-cal-now-line";
           line.style.top = Math.max(0, y) + "px";
