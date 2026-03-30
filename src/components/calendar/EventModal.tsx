@@ -103,31 +103,31 @@ export function EventModal({
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "grid", placeItems: "center", padding: 16, zIndex: 50 }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "#161922", border: "1px solid #1e2030", borderRadius: 12, padding: 16, display: "grid", gap: 10 }}>
+    <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "grid", placeItems: "center", padding: 16, zIndex: 50 }}>
+      <div className="modal-panel" style={{ width: "100%", maxWidth: 500, background: "#161922", border: "1px solid #2a3044", borderRadius: 12, padding: 16, display: "grid", gap: 10, maxHeight: "92vh", overflowY: "auto" }}>
         <h3 style={{ margin: 0 }}>{event ? "Modifica evento" : "Nuovo evento"}</h3>
 
-        <label>
+        <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Titolo
           <input value={title} onChange={(e) => setTitle(e.target.value)} />
         </label>
 
-        <label>
+        <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Descrizione
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
 
-        <label>
+        <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Inizio
           <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
         </label>
 
-        <label>
+        <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Fine
           <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
         </label>
 
-        <label>
+        <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Categoria
           <select value={category} onChange={(e) => setCategory(e.target.value as EventCategory)}>
             <option value="universita">università</option>
@@ -139,7 +139,7 @@ export function EventModal({
           </select>
         </label>
 
-        <label>
+        <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Stato
           <select value={status} onChange={(e) => setStatus(e.target.value as EventStatus)}>
             <option value="confirmed">confirmed</option>
@@ -148,7 +148,7 @@ export function EventModal({
           </select>
         </label>
 
-        <label>
+        <label style={{ display: "grid", gap: 6, fontSize: 13 }}>
           Task (una per riga)
           <textarea value={tasksText} onChange={(e) => setTasksText(e.target.value)} />
         </label>
@@ -160,7 +160,7 @@ export function EventModal({
             <button
               type="button"
               onClick={() => onDelete(event.id)}
-              style={{ background: "#991b1b", color: "#fff" }}
+              style={{ background: "#991b1b", color: "#fff", borderColor: "#991b1b" }}
             >
               Elimina
             </button>
@@ -168,7 +168,7 @@ export function EventModal({
           <button type="button" onClick={onClose}>
             Annulla
           </button>
-          <button type="button" onClick={onSubmit} style={{ background: "#2563EB", color: "#fff" }}>
+          <button type="button" onClick={onSubmit} style={{ background: "#2563EB", color: "#fff", borderColor: "#2563EB", fontWeight: 700 }}>
             Salva
           </button>
         </div>

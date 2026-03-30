@@ -24,14 +24,15 @@ export function Toolbar({
   onChangeUser,
 }: ToolbarProps) {
   return (
-    <header style={{ display: "grid", gap: 10, padding: 12, borderBottom: "1px solid #1e2030" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-        <strong>{title}</strong>
-        <button onClick={onCreate} type="button">
+    <header style={{ borderBottom: "1px solid #2a3044", background: "#111522" }}>
+      <div className="container" style={{ display: "grid", gap: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <strong style={{ fontSize: 16, textTransform: "capitalize" }}>{title}</strong>
+        <button onClick={onCreate} type="button" style={{ background: "#2563eb", borderColor: "#2563eb", color: "#fff", fontWeight: 700 }}>
           + Evento
         </button>
       </div>
-      <div style={{ display: "flex", gap: 6 }}>
+      <div style={{ display: "flex", gap: 8 }}>
         <button type="button" onClick={() => onChangeUser("mattia")} aria-pressed={currentUser === "mattia"}>
           Mattia
         </button>
@@ -40,7 +41,7 @@ export function Toolbar({
         </button>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <button onClick={onPrev} type="button" aria-label="Periodo precedente">
           ←
         </button>
@@ -50,7 +51,7 @@ export function Toolbar({
         <button onClick={onNext} type="button" aria-label="Periodo successivo">
           →
         </button>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <button
             type="button"
             onClick={() => onChangeView("day")}
@@ -66,6 +67,7 @@ export function Toolbar({
             Settimana
           </button>
         </div>
+      </div>
       </div>
     </header>
   );

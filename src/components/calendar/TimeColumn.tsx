@@ -10,14 +10,14 @@ export function TimeColumn({ window }: TimeColumnProps) {
   const labels = buildTimeLabels(window);
 
   return (
-    <aside style={{ width: 56, borderRight: "1px solid #1e2030", background: "#0f1117" }}>
-      <div style={{ height: 28, borderBottom: "1px solid #1e2030" }} />
+    <aside style={{ width: 56, borderRight: "1px solid #2a3044", background: "#0f1117" }}>
+      <div style={{ height: 30, borderBottom: "1px solid #2a3044" }} />
       {labels.map((label) => (
         <div
           key={label}
           style={{
             height: slotHeight * 4,
-            borderBottom: "1px solid #1e2030",
+            borderBottom: "1px solid #2a3044",
             fontSize: 11,
             color: "#9ca3af",
             padding: "2px 4px 0 0",

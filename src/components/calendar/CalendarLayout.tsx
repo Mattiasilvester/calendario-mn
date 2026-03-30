@@ -120,7 +120,7 @@ export function CalendarLayout() {
   void applyResizeEvent;
 
   return (
-    <div style={{ background: "#0f1117", color: "#e5e7eb", minHeight: "100vh" }}>
+    <div className="app-shell">
       <Toolbar
         view={view}
         title={pageTitle}
@@ -133,7 +133,7 @@ export function CalendarLayout() {
         onChangeUser={setCurrentUser}
       />
 
-      <main style={{ padding: 12 }}>
+      <main className="container">
         {view === "day" ? (
           <DayView
             date={anchorDate}
@@ -161,9 +161,9 @@ export function CalendarLayout() {
             onToggleTask={onToggleTask}
           />
         )}
-        <section style={{ marginTop: 12, border: "1px solid #1e2030", borderRadius: 12, padding: 12 }}>
+        <section className="card" style={{ marginTop: 12, padding: 12 }}>
           <strong>Summary giorno selezionato</strong>
-          <pre style={{ whiteSpace: "pre-wrap", margin: "8px 0 0", fontSize: 12 }}>
+          <pre className="summary-pre">
             {generateDailySummary(anchorDate, events)}
           </pre>
         </section>

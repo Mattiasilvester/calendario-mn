@@ -32,14 +32,14 @@ export function WeekView({
   const gridHeight = getGridHeightPx(window);
 
   return (
-    <section style={{ border: "1px solid #1e2030", borderRadius: 12, overflow: "auto", maxHeight: 520 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(220px, 1fr))", minWidth: 980 }}>
+    <section className="card" style={{ overflow: "auto", maxHeight: 560 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(240px, 1fr))", minWidth: 1080 }}>
         {days.map((day) => {
           const key = day.toISOString();
           const dayEvents = events.filter((event) => isSameDay(parseIsoToDate(event.start), day));
           return (
-            <div key={key} style={{ borderRight: "1px solid #1e2030" }}>
-              <div style={{ padding: "8px 10px", borderBottom: "1px solid #1e2030", fontSize: 12, fontWeight: 700 }}>
+            <div key={key} style={{ borderRight: "1px solid #2a3044" }}>
+              <div style={{ padding: "10px 10px", borderBottom: "1px solid #2a3044", fontSize: 12, fontWeight: 700, background: "#151a28" }}>
                 {day.toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "2-digit" })}
               </div>
 

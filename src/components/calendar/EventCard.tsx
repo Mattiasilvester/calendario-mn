@@ -36,24 +36,25 @@ export function EventCard({ event, layout, currentUser, onClick, onToggleTask }:
         right: 8,
         top: layout.top,
         height: layout.height,
-        borderRadius: 8,
-        padding: "6px 8px",
+        borderRadius: 10,
+        padding: "8px 10px",
         background: CATEGORY_COLORS[event.category],
         color: "#fff",
         overflow: "auto",
         boxShadow: "0 2px 10px rgba(0,0,0,0.35)",
+        border: "1px solid rgba(255,255,255,0.18)",
         fontSize: 12,
         cursor: isOwner ? "pointer" : "default",
       }}
     >
-      <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.2 }}>{event.title}</div>
+      <div style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.25 }}>{event.title}</div>
       <div style={{ fontSize: 11, opacity: 0.9 }}>{timeLabel}</div>
-      <div style={{ fontSize: 10, opacity: 0.9, marginTop: 4 }}>
+      <div style={{ fontSize: 10, opacity: 0.9, marginTop: 6 }}>
         {event.userId} · {event.category} · {event.status}
       </div>
-      <div style={{ marginTop: 6, borderTop: "1px solid rgba(255,255,255,0.22)", paddingTop: 6 }}>
+      <div style={{ marginTop: 8, borderTop: "1px solid rgba(255,255,255,0.22)", paddingTop: 8 }}>
         {event.tasks.map((task) => (
-          <label key={task.id} style={{ display: "flex", gap: 6, alignItems: "flex-start", marginBottom: 4, fontSize: 11 }}>
+          <label key={task.id} style={{ display: "flex", gap: 6, alignItems: "flex-start", marginBottom: 6, fontSize: 11 }}>
             <input
               type="checkbox"
               checked={task.completed}

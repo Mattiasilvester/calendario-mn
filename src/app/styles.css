@@ -1,0 +1,121 @@
+:root {
+  --bg: #0f1117;
+  --surface: #161922;
+  --surface-soft: #1a1e2a;
+  --border: #2a3044;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --primary: #2563eb;
+  --danger: #991b1b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  border-radius: 10px;
+  min-height: 40px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #3c4562;
+}
+
+button[aria-pressed="true"] {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: var(--primary);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  background: #0f1117;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  min-height: 40px;
+  padding: 10px 12px;
+}
+
+textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.container {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 12px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.modal-overlay {
+  backdrop-filter: blur(2px);
+}
+
+.summary-pre {
+  white-space: pre-wrap;
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+@media (max-width: 700px) {
+  .container {
+    padding: 10px;
+  }
+
+  button {
+    min-height: 44px;
+  }
+
+  .modal-overlay {
+    padding: 0 !important;
+    place-items: stretch !important;
+  }
+
+  .modal-panel {
+    border-radius: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    height: 100dvh;
+  }
+}

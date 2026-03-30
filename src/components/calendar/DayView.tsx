@@ -27,7 +27,7 @@ export function DayView({
   const gridHeight = getGridHeightPx(window);
 
   return (
-    <section style={{ border: "1px solid #1e2030", borderRadius: 12, overflow: "hidden", maxHeight: 400, overflowY: "auto" }}>
+    <section className="card" style={{ overflow: "hidden", maxHeight: 460, overflowY: "auto" }}>
       <div style={{ display: "flex", alignItems: "stretch" }}>
         <TimeColumn window={window} />
 

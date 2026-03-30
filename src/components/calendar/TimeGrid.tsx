@@ -26,7 +26,7 @@ export function TimeGrid({ window, onSelectSlot }: TimeGridProps) {
               display: "block",
               width: "100%",
               height: slotHeight,
-              borderBottom: `1px solid ${isHourLine ? "#313549" : "#1e2030"}`,
+              borderBottom: `1px solid ${isHourLine ? "#3a4463" : "#2a3044"}`,
               background: index % 2 === 0 ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
               cursor: onSelectSlot ? "pointer" : "default",
             }}
