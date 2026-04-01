@@ -160,7 +160,7 @@ export function CalendarLayout() {
       return next;
     });
     if (persistedEvent) {
-      void saveEventPersisted(persistedEvent).catch(() => undefined);
+      void saveEventPersisted(persistedEvent).catch((err) => console.error("saveEvent task failed:", err));
     }
   };
 

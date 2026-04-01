@@ -46,7 +46,8 @@ export function subscribeEvents(onChange: (events: CalendarEvent[]) => void): ()
 
 export async function saveEvent(event: CalendarEvent): Promise<void> {
   const eventRef = doc(db, EVENTS_COLLECTION, event.id);
-  await setDoc(eventRef, event);
+  const plainEvent = JSON.parse(JSON.stringify(event)) as CalendarEvent;
+  await setDoc(eventRef, plainEvent);
 }
 
 export async function deleteEvent(id: string): Promise<void> {
