@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MOCK_EVENTS } from "../../mocks/events";
 import type { CalendarEvent, CalendarView, EventDraft, UserId } from "../../types/calendar";
 import {
   DEFAULT_TIME_WINDOW,
@@ -25,11 +24,16 @@ import { EventModal } from "./EventModal";
 import { MonthView } from "./MonthView";
 import { Toolbar } from "./Toolbar";
 import { WeekView } from "./WeekView";
+import {
+  deleteEvent as deleteEventPersisted,
+  saveEvent as saveEventPersisted,
+  subscribeEvents,
+} from "../../services/persistence/firestoreAdapter";
 
 export function CalendarLayout() {
   const [view, setView] = useState<CalendarView>("week");
   const [anchorDate, setAnchorDate] = useState<Date>(new Date());
-  const [events, setEvents] = useState<CalendarEvent[]>(MOCK_EVENTS);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [currentUser, setCurrentUser] = useState<UserId>("mattia");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
@@ -42,6 +46,13 @@ export function CalendarLayout() {
     if (view !== "month") return;
     setMonthNewEventDate(startOfLocalDay(anchorDate));
   }, [view, anchorDate]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeEvents((remoteEvents) => {
+      setEvents(remoteEvents);
+    });
+    return unsubscribe;
+  }, []);
 
   const pageTitle = useMemo(() => {
     if (view === "day") {
@@ -110,15 +121,23 @@ export function CalendarLayout() {
     }
 
     try {
+      let persistedEvent: CalendarEvent | null = null;
       setEvents((prev) => {
         if (draft.id) {
           const target = prev.find((event) => event.id === draft.id);
           if (!target) return prev;
           if (target.userId !== currentUser) return prev; // read-only su eventi altrui
-          return updateEvent(prev, draft.id, draft);
+          const next = updateEvent(prev, draft.id, draft);
+          persistedEvent = next.find((event) => event.id === draft.id) ?? null;
+          return next;
         }
-        return createEvent(prev, { ...draft, userId: currentUser });
+        const next = createEvent(prev, { ...draft, userId: currentUser });
+        persistedEvent = next[next.length - 1] ?? null;
+        return next;
       });
+      if (persistedEvent) {
+        void saveEventPersisted(persistedEvent).catch(() => undefined);
+      }
       setModalOpen(false);
       return { ok: true };
     } catch (err) {
@@ -129,11 +148,20 @@ export function CalendarLayout() {
 
   const deleteEvent = (eventId: string) => {
     setEvents((prev) => prev.filter((event) => event.id !== eventId || event.userId !== currentUser));
+    void deleteEventPersisted(eventId).catch(() => undefined);
     setModalOpen(false);
   };
 
   const onToggleTask = (eventId: string, taskId: string, completed: boolean) => {
-    setEvents((prev) => toggleTaskCompleted(prev, eventId, taskId, completed, currentUser));
+    let persistedEvent: CalendarEvent | null = null;
+    setEvents((prev) => {
+      const next = toggleTaskCompleted(prev, eventId, taskId, completed, currentUser);
+      persistedEvent = next.find((event) => event.id === eventId) ?? null;
+      return next;
+    });
+    if (persistedEvent) {
+      void saveEventPersisted(persistedEvent).catch(() => undefined);
+    }
   };
 
   const handleMoveSession = useCallback(
@@ -143,6 +171,7 @@ export function CalendarLayout() {
         setEvents((prev) => prev.map((e) => (e.id === payload.eventId ? payload.snapshot : e)));
         return;
       }
+      let persistedEvent: CalendarEvent | null = null;
       setEvents((prev) =>
         prev.map((e) => {
           if (e.id !== payload.eventId) return e;
@@ -153,9 +182,14 @@ export function CalendarLayout() {
             DEFAULT_TIME_WINDOW,
             currentUser,
           );
-          return { ...e, start, end };
+          const updated = { ...e, start, end };
+          if (phase === "end") persistedEvent = updated;
+          return updated;
         }),
       );
+      if (phase === "end" && persistedEvent) {
+        void saveEventPersisted(persistedEvent).catch(() => undefined);
+      }
     },
     [currentUser],
   );
@@ -167,6 +201,7 @@ export function CalendarLayout() {
         setEvents((prev) => prev.map((e) => (e.id === payload.eventId ? payload.snapshot : e)));
         return;
       }
+      let persistedEvent: CalendarEvent | null = null;
       setEvents((prev) =>
         prev.map((e) => {
           if (e.id !== payload.eventId) return e;
@@ -177,9 +212,14 @@ export function CalendarLayout() {
             payload.deltaMinutes,
             DEFAULT_TIME_WINDOW,
           );
-          return { ...e, start, end };
+          const updated = { ...e, start, end };
+          if (phase === "end") persistedEvent = updated;
+          return updated;
         }),
       );
+      if (phase === "end" && persistedEvent) {
+        void saveEventPersisted(persistedEvent).catch(() => undefined);
+      }
     },
     [currentUser],
   );
