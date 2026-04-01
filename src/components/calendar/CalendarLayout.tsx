@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarEvent, CalendarView, EventDraft, UserId } from "../../types/calendar";
 import {
   DEFAULT_TIME_WINDOW,
@@ -34,6 +34,7 @@ export function CalendarLayout() {
   const [view, setView] = useState<CalendarView>("week");
   const [anchorDate, setAnchorDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const eventsRef = useRef<CalendarEvent[]>([]);
   const [currentUser, setCurrentUser] = useState<UserId>("mattia");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
@@ -53,6 +54,10 @@ export function CalendarLayout() {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    eventsRef.current = events;
+  }, [events]);
 
   const pageTitle = useMemo(() => {
     if (view === "day") {
@@ -154,13 +159,10 @@ export function CalendarLayout() {
 
   const onToggleTask = (eventId: string, taskId: string, completed: boolean) => {
     console.log("1. onToggleTask chiamato", { eventId, taskId, completed });
-    let persistedEvent: CalendarEvent | null = null;
-    setEvents((prev) => {
-      const next = toggleTaskCompleted(prev, eventId, taskId, completed, currentUser);
-      persistedEvent = next.find((event) => event.id === eventId) ?? null;
-      return next;
-    });
+    const nextEvents = toggleTaskCompleted(eventsRef.current, eventId, taskId, completed, currentUser);
+    const persistedEvent = nextEvents.find((event) => event.id === eventId) ?? null;
     console.log("2. persistedEvent trovato:", persistedEvent);
+    setEvents(nextEvents);
     if (persistedEvent) {
       console.log("3. chiamando saveEvent con:", persistedEvent);
       void saveEventPersisted(persistedEvent)
