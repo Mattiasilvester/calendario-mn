@@ -47,9 +47,7 @@ export function subscribeEvents(onChange: (events: CalendarEvent[]) => void): ()
 export async function saveEvent(event: CalendarEvent): Promise<void> {
   const eventRef = doc(db, EVENTS_COLLECTION, event.id);
   const plainEvent = JSON.parse(JSON.stringify(event)) as CalendarEvent;
-  console.log("5. firestoreAdapter.saveEvent chiamato con id:", event.id, "tasks:", event.tasks);
   await setDoc(eventRef, plainEvent);
-  console.log("6. setDoc completato");
 }
 
 export async function deleteEvent(id: string): Promise<void> {
