@@ -153,14 +153,21 @@ export function CalendarLayout() {
   };
 
   const onToggleTask = (eventId: string, taskId: string, completed: boolean) => {
+    console.log("1. onToggleTask chiamato", { eventId, taskId, completed });
     let persistedEvent: CalendarEvent | null = null;
     setEvents((prev) => {
       const next = toggleTaskCompleted(prev, eventId, taskId, completed, currentUser);
       persistedEvent = next.find((event) => event.id === eventId) ?? null;
       return next;
     });
+    console.log("2. persistedEvent trovato:", persistedEvent);
     if (persistedEvent) {
-      void saveEventPersisted(persistedEvent).catch((err) => console.error("saveEvent task failed:", err));
+      console.log("3. chiamando saveEvent con:", persistedEvent);
+      void saveEventPersisted(persistedEvent)
+        .then(() => {
+          console.log("4. saveEvent completato con successo");
+        })
+        .catch((err) => console.error("saveEvent task failed:", err));
     }
   };
 
